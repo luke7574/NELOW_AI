@@ -200,7 +200,7 @@ def load_models():
     model_paths = [
         # 'C:/Users/wipla/OneDrive/Emmanuel/NELOW_AI/NELOW_AI_python_project/NELOW_AI_model/NELOW_GL_model_V3.h5'
         #문욱경로
-        'C:/Users/gram/AI/NELOW/NELOW_AI/NELOW_AI_model/NELOW_GL_model_V3.h5'
+        'C:/Users/user/AI/NELOW/NELOW_AI/NELOW_AI_model/NELOW_GL_model_V3.h5'
         # 'C:/Users/wipla/OneDrive/Emmanuel/NELOW_AI/NELOW_AI_python_project/NELOW_AI_model/NELOW_GL_model_V3.0.1.h5'
     ]
 
