@@ -14,21 +14,21 @@ from keras import backend as K
 
 from scipy.fftpack import fft
 
-AI_model_training = 'NELOW_AI_model/NELOW_GL_model_SWM.h5'
-AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V3.h5'
-
-WAV_files_path_training = 'test/test_WAV_FILES/'
-Numpy_files_path_training = 'test/test_NUMPY_FILES/'
-
-WAV_files_path_testing = 'Testing_Aramoon/WAV_files/'
-Numpy_files_path_testing = 'Testing_Aramoon/Numpy_files/'
-CSV_files_path_testing = 'Testing_Aramoon/CSV_files/'
-
-training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
-model_training = 0
-
-testing_sound_preprocessing = 1    # 음성파일(wav) numpy배열로 변환하여 저장
-model_testing = 1
+# AI_model_training = 'NELOW_AI_model/NELOW_GL_model_SWM.h5'
+# AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V3.h5'
+#
+# WAV_files_path_training = 'test/test_WAV_FILES/'
+# Numpy_files_path_training = 'test/test_NUMPY_FILES/'
+#
+# WAV_files_path_testing = 'Testing_Aramoon/WAV_files/'
+# Numpy_files_path_testing = 'Testing_Aramoon/Numpy_files/'
+# CSV_files_path_testing = 'Testing_Aramoon/CSV_files/'
+#
+# training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
+# model_training = 0
+#
+# testing_sound_preprocessing = 1    # 음성파일(wav) numpy배열로 변환하여 저장
+# model_testing = 1
 
 # Select clean 1-second segment from the signal
 # 음성신호에서 1초 길이의 깨끗한 구간 추출
@@ -58,9 +58,9 @@ def get_wav_filtered(signal,sr):
 
     return filtered, sr
 
-i_path = WAV_files_path_training
-o_path = Numpy_files_path_training
-lis = os.listdir(i_path)  # 리스트 열로 wav파일명 불러오기
+# i_path = WAV_files_path_training
+# o_path = Numpy_files_path_training
+# lis = os.listdir(i_path)  # 리스트 열로 wav파일명 불러오기
 
 def get_NELOW_values(wav_path):
     s_fft = []
@@ -148,40 +148,44 @@ def get_NELOW_values(wav_path):
 #     q = map[:, :-3]  # 마지막 3개의 열만 제거 (오디오 길이가 일정하지 않거나, 마지막 프레임이 불완전할 가능성이 높기 때문에 제거하는 것)  (20,13)
 #     np.save(o_path + i + '.npy', q)
 
-npy_path = 'test/test_NUMPY_FILES/'
-lis_npy = os.listdir(npy_path)
-print(lis_npy)
+npy_path = 'C:/Users/user/AI/NELOW/NELOW_AI/MEL_Spectrogram/test_NUMPY_FILES/138964_20230330_11_13_18_126_M.wav.npy'
 
 npy_table = []
 label = []
 filename = []
-for i in lis_npy:
-    if '.npy' in i:
-        a = np.load(npy_path + i)
-        # print(a)
-        # print(len(a))   # 20
-        # print(len(a[0]))  # 13
-        # print(a.shape)    # (20,13)
-        a = a.reshape(-1, 20, 13, 1)
-        # print('----------------------------------------------------------')
-        # print(a)
-        # print(len(a))   # 1
-        # print(len(a[0])) # 20
-        # print(a.shape)    # (1,20,13,1)
-        npy_table.append(a)
-        if i[-9] == 'L':
-            label.append(0)
-        elif i[-9] == 'M':
-            label.append(1)
-        else:
-            label.append(2)
-        filename.append(i)
 
-# print(npy_table)
-label = tf.keras.utils.to_categorical(label, num_classes=3)
-# print('================================================')
-npy_table = np.array(npy_table) # input
-print(npy_table)
+fft_data = np.load(npy_path)
+print(fft_data)
+print(fft_data[0])
+
+print("-----------------------------")
+df = pd.DataFrame(fft_data)
+print(df)
+# 생략 없이 출력 (컬럼 개수 & 행 개수 제한 해제)
+pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns", None)
+print("----------------------------------------------------------------")
+print(df)
+# # print("Shape of a array:", a.shape)
+# fft_data = fft_data.reshape(-1, 3000, 1) # 1D CNN 입력 형태로 변환
+# npy_table.append(fft_data)
+# if i[-9] == 'L':
+#     label.append(0)
+# elif i[-9] == 'M':
+#     label.append(1)
+# else:
+#     label.append(2)
+# filename.append(i)
+#
+# label = tf.keras.utils.to_categorical(label, num_classes=3)
+# npy_table = np.array(npy_table) # input
+# label = np.array(label)         # output
+# filename = np.array(filename)
+#
+# npy_table = npy_table.reshape(-1, 3000, 1)
+# label = label.reshape(-1, 3)
+# filename = filename.reshape(-1, 1)
+
 
 
 

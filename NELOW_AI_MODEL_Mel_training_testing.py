@@ -3,7 +3,7 @@ import pandas as pd
 import librosa
 import keras
 from tensorflow.keras.models import Sequential, Model, load_model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Dropout, Input, Flatten, GlobalMaxPooling2D, LeakyReLU
+from tensorflow.keras.layers import Conv1D, Conv2D, MaxPooling1D, MaxPooling2D, Dense, Dropout, Input, Flatten, GlobalMaxPooling2D, LeakyReLU
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
@@ -14,22 +14,24 @@ from keras import backend as K
 
 from scipy.fftpack import fft
 
-AI_model_training = 'NELOW_AI_model/NELOW_GL_model_test_V3.h5'
-AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_test_V3.h5'
+AI_model_training = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_1.h5'
+AI_model_testing = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_1.h5'
 
-WAV_files_path_training = 'Training/WAV_files/'
-Numpy_files_path_training = 'Training/Numpy_files/'
+# 훈련 데이터셋
+WAV_files_path_training = 'MEL_Spectrogram/test_WAV_FILES/'
+Numpy_files_path_training = 'MEL_Spectrogram/test_NUMPY_FILES/'
 
-WAV_files_path_testing = 'Testing/WAV_files/'
-Numpy_files_path_testing = 'Testing/Numpy_files/'
-CSV_files_path_testing = 'Testing/CSV_files/'
+# 테스트 데이터셋
+WAV_files_path_testing = 'MEL_Spectrogram/Testing/WAV_files/'
+Numpy_files_path_testing = 'MEL_Spectrogram/Testing/Numpy_files/'
+CSV_files_path_testing = 'MEL_Spectrogram/Testing/CSV_files/'
 
-training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
+training_sound_preprocessing = 1   # 음성파일(wav) numpy배열로 변환하여 저장
 model_training = 0
-train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/Testing/plot_history/NELOW_test_V3.png'   #학습 그래프 경로/파일명 설정
+train_plot = 'C:/Users/gram/AI/NELOW/NELOW_AI/MEL_Spectrogram/plot_history/NELOW_MEL_model_1.png'   #학습 그래프 경로/파일명 설정
 
 testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
-model_testing = 1
+model_testing = 0
 
 
 # Define recall metric
@@ -96,15 +98,13 @@ def get_NELOW_values(wav_path):
     for i in range(i_time):
         u_data = abs(data[(i + 1) * SEC_0_1:(i + 1) * SEC_0_1 + SEC_1])
         s_fft.append(np.std(u_data))
+    a = np.argmin(s_fft) + 1 # 표준편차가 가장 작은 1초 구간 선택
 
-    a = np.argmin(s_fft) + 1
-
-    tfa_data = abs(fft(data[a * SEC_0_1:a * SEC_0_1 + SEC_1]))
-
+    tfa_data = abs(fft(data[a * SEC_0_1:a * SEC_0_1 + SEC_1])) # 시간 도메인 데이터(tfa_data)를 주파수 도메인으로 변환
     tfa_data3000 = tfa_data[0:3000]
     tfa_data3000[:50] = 0
 
-    idx = np.argmax(tfa_data3000)
+    idx = np.argmax(tfa_data3000) # 가장 큰 주파수 성분의 인덱스(주파수 위치)
 
     startPos = 0
 
@@ -112,29 +112,27 @@ def get_NELOW_values(wav_path):
         startPos = 0
     else:
         startPos = idx - 10
-
     stopPos = idx + 10
 
-
     # 누수강도
-    wave_energy = np.average(tfa_data3000[startPos:stopPos])
+    wave_energy = np.average(tfa_data3000[startPos:stopPos])   # 가장 강한 주파수 대역의 평균 진폭 (누수 강도)
     # 최대주파수
-    wave_max_frequency = np.argmax(tfa_data3000)
+    wave_max_frequency = np.argmax(tfa_data3000)               # 최대 주파수 성분의 위치(인덱스값) (주파수 Hz 단위)
 
     return wave_energy, wave_max_frequency
 
-# Generate spectrogram from WAV file
-# 오디오 파일을 로드하고 리샘플링을 수행한 다음 get_wav_clean1sec 및 get_wav_filtered 함수를 적용하여 오디오를 전처리하고 마지막으로 멜 주파수 켑스트럼 계수(MFCC)를 계산함.
+# 1초구간 찾고 -> 대역통과필터 거치고 -> fft 수행 -> input_data 완성
 def get_spec(path):
-    q, w = librosa.load(path=path, sr=None)
-    q=librosa.resample(q,orig_sr=w,target_sr=8000) # 원본 샘플링 레이팅에서 8000Hz 샘플링 레이트로 변환
-    w=8000
-    q, w = get_wav_clean1sec(q, w)
-    q, w = get_wav_filtered(q, w)
-    # y=q : 오디오 신호를 입력받음 / sr=w : 샘플링 레이트 / n_fft: FFT (Fast Fourier Transform)길이 지정 => 2048개의 샘플을 사용 / hop_length: 프레임 간의 hop length (시간 간격)을 설정 / n_mfcc :  20개의 MFCC 계수를 계산하겠다는 의미
-    map=librosa.feature.mfcc(y=q,sr=w,n_fft=2048, hop_length=512,n_mfcc = 20)
-    # map은 2D numpy 배열로, 각 열은 각 시간 프레임의 MFCC값
-    return map
+    data, sr = librosa.load(path=path, sr=None)
+    data = librosa.resample(data,orig_sr=sr,target_sr=8000) # 원본 샘플링 레이팅에서 8000Hz 샘플링 레이트로 변환
+    sr = 8000
+    data, sr = get_wav_clean1sec(data, sr)
+    data, sr = get_wav_filtered(data, sr)
+
+    mel_spec = librosa.feature.melspectrogram(y=data, sr=sr, n_fft=2048, hop_length=512, n_mels=128)
+    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)  # 로그 변환 적용
+
+    return mel_spec_db
 
 # Save numpy array representations of spectrograms
 # 디렉토리의 모든 WAV 파일의 MFCC 데이터를 NumPy 배열로 저장하여 추가 처리를 위해 사용함.
@@ -144,8 +142,6 @@ def save_npy(i_path,o_path):
     for i in lis:
         if '.wav' in i:
             q=get_spec(i_path+i)
-            q=q[:,:-3] # 마지막 3개의 열만 제거 (오디오 길이가 일정하지 않거나, 마지막 프레임이 불완전할 가능성이 높기 때문에 제거하는 것)
-
             np.save(o_path+i+'.npy',q)
     return
 
@@ -160,10 +156,10 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
 
     for i in lis:
         if '.npy' in i:
-            a = np.load(npy_path + i)
+            fft_data = np.load(npy_path + i)
             # print("Shape of a array:", a.shape)
-            a = a.reshape(-1, 20, 13, 1)
-            npy_table.append(a)
+            fft_data = fft_data.reshape(-1, 128, 16, 1) # 2D CNN 입력 형태로 변환
+            npy_table.append(fft_data)
             if i[-9] == 'L':
                 label.append(0)
             elif i[-9] == 'M':
@@ -177,7 +173,7 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
     label = np.array(label)         # output
     filename = np.array(filename)
 
-    npy_table = npy_table.reshape(-1, 20, 13, 1)
+    npy_table = npy_table.reshape(-1, 128, 16, 1)
     label = label.reshape(-1, 3)
     filename = filename.reshape(-1, 1)
 
@@ -222,6 +218,7 @@ def plot_history(history):
     axes[1, 1].legend()
 
     plt.tight_layout()
+    # 그래프를 이미지 파일로 저장
     plt.savefig(train_plot, dpi=300)
     plt.show()
 
@@ -240,8 +237,8 @@ if model_training:
     model = tf.keras.models.Sequential()
 
     # Convolutional neural network architecture
-    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(20, 13, 1), padding='same'))
-    model.add(LeakyReLU(alpha=0.1)) # 활성함수 relu 변형함수로 음의 입력에 대해서도 작은 기울기를 제공
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(128, 16, 1), padding='same'))
+    model.add(LeakyReLU(alpha=0.1))  # 활성함수 relu 변형함수로 음의 입력에 대해서도 작은 기울기를 제공
     model.add(MaxPooling2D((2, 2), padding='same'))
     model.add(Conv2D(64, (3, 3), activation='linear', padding='same'))
     model.add(LeakyReLU(alpha=0.1))
@@ -253,7 +250,7 @@ if model_training:
     model.add(Dense(128, activation='linear'))
     model.add(LeakyReLU(alpha=0.1))
     model.add(Dense(3, activation='softmax'))
-    model.compile(loss=keras.losses.categorical_crossentropy, optimizer='adam', metrics=['accuracy',f1_m,precision_m, recall_m])
+    model.compile(loss=keras.losses.categorical_crossentropy, optimizer='adam', metrics=['accuracy', f1_m, precision_m, recall_m])
 
     q,w,e=load_npy(Numpy_files_path_training)
     # model.fit(q,w,epochs=100,batch_size=200)
@@ -297,7 +294,7 @@ if model_testing:
     AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
 
     # Creating column names for the DataFrame
-    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'AI_모델_test_V3']
+    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'model_2']
     fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
     # Creating DataFrame
     final_df = pd.DataFrame(fin, columns=columns)
@@ -306,12 +303,12 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_test_V3.csv', index=False, encoding='utf-8-sig')
+    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_model_2.csv', index=False, encoding='utf-8-sig')
 
     # Concatenating filenames, real labels, old predictions, and new predictions
     final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
     # Creating column names for the DataFrame
-    columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'AI_모델_V3_L', 'AI_모델_V3_M', 'AI_모델_V3_N']
+    columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'model_2_L', 'model_2_M', 'model_2_N']
     # Creating DataFrame
     final_df_2 = pd.DataFrame(final_data, columns=columns_2)
     # Ensuring 'Max_Amplitude' is treated as a numeric column
@@ -319,7 +316,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_test_V3.csv', index=False, encoding='utf-8-sig')
+    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_model_2.csv', index=False, encoding='utf-8-sig')
 
     summary = {}
 
@@ -333,9 +330,9 @@ if model_testing:
 
     # Print the results
     for model, results in summary.items():
-        print(f"Results for AI_모델_test_V3:")
+        print(f"Results for model_2:")
         print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
 
     # Create a DataFrame and write to CSV
     df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_test_V3.csv', encoding='utf-8-sig')
+    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_model_2.csv', encoding='utf-8-sig')
