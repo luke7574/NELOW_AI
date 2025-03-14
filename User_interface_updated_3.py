@@ -157,7 +157,6 @@ def get_NELOW_values(wav_path):
 
     stopPos = idx + 10
 
-
     # json파일
     NELOW_fft_data = tfa_data3000.tolist()
     # 표준편차

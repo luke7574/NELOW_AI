@@ -20,15 +20,15 @@ AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_test_V3.h5'
 WAV_files_path_training = 'Training/WAV_files/'
 Numpy_files_path_training = 'Training/Numpy_files/'
 
-WAV_files_path_testing = 'Testing/WAV_files/'
-Numpy_files_path_testing = 'Testing/Numpy_files/'
-CSV_files_path_testing = 'Testing/CSV_files/'
+WAV_files_path_testing = 'Testing_HP/WAV_files/'
+Numpy_files_path_testing = 'Testing_HP/Numpy_files/'
+CSV_files_path_testing = 'Testing_HP/CSV_files/'
 
 training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
 model_training = 0
 train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/Testing/plot_history/NELOW_test_V3.png'   #학습 그래프 경로/파일명 설정
 
-testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
+testing_sound_preprocessing = 1    # 음성파일(wav) numpy배열로 변환하여 저장
 model_testing = 1
 
 
@@ -131,8 +131,9 @@ def get_spec(path):
     w=8000
     q, w = get_wav_clean1sec(q, w)
     q, w = get_wav_filtered(q, w)
-    # y=q : 오디오 신호를 입력받음 / sr=w : 샘플링 레이트 / n_fft: FFT (Fast Fourier Transform)길이 지정 => 2048개의 샘플을 사용 / hop_length: 프레임 간의 hop length (시간 간격)을 설정 / n_mfcc :  20개의 MFCC 계수를 계산하겠다는 의미
     map=librosa.feature.mfcc(y=q,sr=w,n_fft=2048, hop_length=512,n_mfcc = 20)
+    # y=q : 오디오 신호를 입력받음 / sr=w : 샘플링 레이트 / n_fft: FFT (Fast Fourier Transform)길이 지정 => 2048개의 샘플을 사용
+    # hop_length: 프레임 간의 hop length (시간 간격)을 설정 / n_mfcc :  20개의 MFCC 계수를 계산하겠다는 의미
     # map은 2D numpy 배열로, 각 열은 각 시간 프레임의 MFCC값
     return map
 
@@ -306,7 +307,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_test_V3.csv', index=False, encoding='utf-8-sig')
+    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_test_V3_HP.csv', index=False, encoding='utf-8-sig')
 
     # Concatenating filenames, real labels, old predictions, and new predictions
     final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
@@ -319,7 +320,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_test_V3.csv', index=False, encoding='utf-8-sig')
+    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_test_V3_HP.csv', index=False, encoding='utf-8-sig')
 
     summary = {}
 
@@ -338,4 +339,4 @@ if model_testing:
 
     # Create a DataFrame and write to CSV
     df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_test_V3.csv', encoding='utf-8-sig')
+    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_test_V3_HP.csv', encoding='utf-8-sig')

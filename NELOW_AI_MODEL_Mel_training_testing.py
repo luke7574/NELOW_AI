@@ -18,20 +18,20 @@ AI_model_training = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_1.h5'
 AI_model_testing = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_1.h5'
 
 # 훈련 데이터셋
-WAV_files_path_training = 'MEL_Spectrogram/test_WAV_FILES/'
-Numpy_files_path_training = 'MEL_Spectrogram/test_NUMPY_FILES/'
+WAV_files_path_training = 'MEL_Spectrogram/Training/WAV_files/'
+Numpy_files_path_training = 'MEL_Spectrogram/Training/Numpy_files/'
 
 # 테스트 데이터셋
-WAV_files_path_testing = 'MEL_Spectrogram/Testing/WAV_files/'
-Numpy_files_path_testing = 'MEL_Spectrogram/Testing/Numpy_files/'
-CSV_files_path_testing = 'MEL_Spectrogram/Testing/CSV_files/'
+WAV_files_path_testing = 'MEL_Spectrogram/Testing_HP/WAV_files/'
+Numpy_files_path_testing = 'MEL_Spectrogram/Testing_HP/Numpy_files/'
+CSV_files_path_testing = 'MEL_Spectrogram/Testing_HP/CSV_files/'
 
-training_sound_preprocessing = 1   # 음성파일(wav) numpy배열로 변환하여 저장
+training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
 model_training = 0
-train_plot = 'C:/Users/gram/AI/NELOW/NELOW_AI/MEL_Spectrogram/plot_history/NELOW_MEL_model_1.png'   #학습 그래프 경로/파일명 설정
+train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/MEL_Spectrogram/plot_history/NELOW_MEL_model_1.png'   #학습 그래프 경로/파일명 설정
 
 testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
-model_testing = 0
+model_testing = 1
 
 
 # Define recall metric
@@ -76,8 +76,8 @@ def get_wav_filtered(signal,sr):
     minFreq=20; maxFreq=1000; order=5
 
     nyq = 0.5 * sr
-    low = minFreq / nyq
-    high = maxFreq / nyq
+    low = minFreq / nyq  # 0.1
+    high = maxFreq / nyq # 0.25
     b, a = butter(order, [low, high], btype='band')
 
     filtered = lfilter(b, a, signal)
@@ -276,63 +276,63 @@ if model_testing:
     accuracy = accuracy_score(label_max, AI_model_predictions_max)
     print(f"Accuracy : {accuracy:.4f}")
 
-    max_amplitudes, max_frequencies = [], []
-    for i in os.listdir(WAV_files_path_testing):
-        wav_file = os.path.join(WAV_files_path_testing, i)
-        max_amplitude, max_frequency = get_NELOW_values(wav_file)
-        max_amplitudes.append(max_amplitude)
-        max_frequencies.append(max_frequency)
-
-
-    # Reshaping filenames for concatenation and removing the last 4 characters
-    filenames = ee.reshape(len(ee), 1)
-    filenames = np.array([fname[0][:-4] for fname in filenames]).reshape(len(filenames), 1)
-    max_amplitudes = np.array(max_amplitudes).reshape(len(max_amplitudes), 1)  # Reshape max_amplitudes
-    max_frequencies = np.array(max_frequencies).reshape(len(max_frequencies), 1)  # Reshape max_frequencies
-
-    label_max_reshaped = label_max.reshape(len(label_max), 1)
-    AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
-
-    # Creating column names for the DataFrame
-    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'model_2']
-    fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
-    # Creating DataFrame
-    final_df = pd.DataFrame(fin, columns=columns)
-    # Ensuring 'Max_Amplitude' is treated as a numeric column
-    final_df['소리_최대_진폭'] = pd.to_numeric(final_df['소리_최대_진폭'], errors='coerce')
-    # Sorting DataFrame by 'Max_Amplitude' in descending order
-    final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
-    # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_model_2.csv', index=False, encoding='utf-8-sig')
-
-    # Concatenating filenames, real labels, old predictions, and new predictions
-    final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
-    # Creating column names for the DataFrame
-    columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'model_2_L', 'model_2_M', 'model_2_N']
-    # Creating DataFrame
-    final_df_2 = pd.DataFrame(final_data, columns=columns_2)
-    # Ensuring 'Max_Amplitude' is treated as a numeric column
-    final_df_2['소리_최대_진폭'] = pd.to_numeric(final_df_2['소리_최대_진폭'], errors='coerce')
-    # Sorting DataFrame by 'Max_Amplitude' in descending order
-    final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
-    # Saving to CSV
-    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_model_2.csv', index=False, encoding='utf-8-sig')
-
-    summary = {}
-
-    # Calculate counts of each label
-    counts = np.bincount(AI_model_predictions_max, minlength=3)
-    summary[AI_model_testing] = {
-        "Leak": counts[0],
-        "Meter": counts[1],
-        "No leak": counts[2]
-    }
-
-    # Print the results
-    for model, results in summary.items():
-        print(f"Results for model_2:")
-        print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
-
-    # Create a DataFrame and write to CSV
-    df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_model_2.csv', encoding='utf-8-sig')
+    # max_amplitudes, max_frequencies = [], []
+    # for i in os.listdir(WAV_files_path_testing):
+    #     wav_file = os.path.join(WAV_files_path_testing, i)
+    #     max_amplitude, max_frequency = get_NELOW_values(wav_file)
+    #     max_amplitudes.append(max_amplitude)
+    #     max_frequencies.append(max_frequency)
+    #
+    #
+    # # Reshaping filenames for concatenation and removing the last 4 characters
+    # filenames = ee.reshape(len(ee), 1)
+    # filenames = np.array([fname[0][:-4] for fname in filenames]).reshape(len(filenames), 1)
+    # max_amplitudes = np.array(max_amplitudes).reshape(len(max_amplitudes), 1)  # Reshape max_amplitudes
+    # max_frequencies = np.array(max_frequencies).reshape(len(max_frequencies), 1)  # Reshape max_frequencies
+    #
+    # label_max_reshaped = label_max.reshape(len(label_max), 1)
+    # AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
+    #
+    # # Creating column names for the DataFrame
+    # columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'MEL_model_1']
+    # fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
+    # # Creating DataFrame
+    # final_df = pd.DataFrame(fin, columns=columns)
+    # # Ensuring 'Max_Amplitude' is treated as a numeric column
+    # final_df['소리_최대_진폭'] = pd.to_numeric(final_df['소리_최대_진폭'], errors='coerce')
+    # # Sorting DataFrame by 'Max_Amplitude' in descending order
+    # final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
+    # # Saving to CSV
+    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_MEL_model_1.csv', index=False, encoding='utf-8-sig')
+    #
+    # # Concatenating filenames, real labels, old predictions, and new predictions
+    # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
+    # # Creating column names for the DataFrame
+    # columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'MEL_model_1_L', 'MEL_model_1_M', 'MEL_model_1_N']
+    # # Creating DataFrame
+    # final_df_2 = pd.DataFrame(final_data, columns=columns_2)
+    # # Ensuring 'Max_Amplitude' is treated as a numeric column
+    # final_df_2['소리_최대_진폭'] = pd.to_numeric(final_df_2['소리_최대_진폭'], errors='coerce')
+    # # Sorting DataFrame by 'Max_Amplitude' in descending order
+    # final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
+    # # Saving to CSV
+    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_MEL_model_1.csv', index=False, encoding='utf-8-sig')
+    #
+    # summary = {}
+    #
+    # # Calculate counts of each label
+    # counts = np.bincount(AI_model_predictions_max, minlength=3)
+    # summary[AI_model_testing] = {
+    #     "Leak": counts[0],
+    #     "Meter": counts[1],
+    #     "No leak": counts[2]
+    # }
+    #
+    # # Print the results
+    # for model, results in summary.items():
+    #     print(f"Results for MEL_model_1:")
+    #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
+    #
+    # # Create a DataFrame and write to CSV
+    # df_summary = pd.DataFrame.from_dict(summary, orient='index')
+    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_MEL_model_1.csv', encoding='utf-8-sig')

@@ -148,8 +148,8 @@ def get_NELOW_values(wav_path):
 #     q = map[:, :-3]  # 마지막 3개의 열만 제거 (오디오 길이가 일정하지 않거나, 마지막 프레임이 불완전할 가능성이 높기 때문에 제거하는 것)  (20,13)
 #     np.save(o_path + i + '.npy', q)
 
-npy_path = 'C:/Users/user/AI/NELOW/NELOW_AI/MEL_Spectrogram/test_NUMPY_FILES/138964_20230330_11_13_18_126_M.wav.npy'
-
+# npy_path = 'C:/Users/user/AI/NELOW/NELOW_AI/MEL_Spectrogram/test_NUMPY_FILES/138964_20230330_11_13_18_126_M.wav.npy'
+npy_path = 'C:/Users/user/AI/NELOW/NELOW_AI/Training/Numpy_files/13906_20230919_12_09_54_112_L.wav.npy'
 npy_table = []
 label = []
 filename = []
