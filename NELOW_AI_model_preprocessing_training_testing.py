@@ -20,9 +20,9 @@ AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_test_V3.h5'
 WAV_files_path_training = 'Training/WAV_files/'
 Numpy_files_path_training = 'Training/Numpy_files/'
 
-WAV_files_path_testing = 'Testing_HP/WAV_files/'
-Numpy_files_path_testing = 'Testing_HP/Numpy_files/'
-CSV_files_path_testing = 'Testing_HP/CSV_files/'
+WAV_files_path_testing = 'Testing_곡성/WAV_files/'
+Numpy_files_path_testing = 'Testing_곡성/Numpy_files/'
+CSV_files_path_testing = 'Testing_곡성/CSV_files/'
 
 training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
 model_training = 0
@@ -307,7 +307,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_test_V3_HP.csv', index=False, encoding='utf-8-sig')
+    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_testV3_곡성.csv', index=False, encoding='utf-8-sig')
 
     # Concatenating filenames, real labels, old predictions, and new predictions
     final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
@@ -320,7 +320,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_test_V3_HP.csv', index=False, encoding='utf-8-sig')
+    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_testV3_곡성.csv', index=False, encoding='utf-8-sig')
 
     summary = {}
 
@@ -334,9 +334,9 @@ if model_testing:
 
     # Print the results
     for model, results in summary.items():
-        print(f"Results for AI_모델_test_V3:")
+        print(f"Results for AI_모델_곡성:")
         print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
 
     # Create a DataFrame and write to CSV
     df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_test_V3_HP.csv', encoding='utf-8-sig')
+    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_testV3_곡성.csv', encoding='utf-8-sig')
