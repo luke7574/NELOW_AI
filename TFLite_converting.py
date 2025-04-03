@@ -37,3 +37,9 @@ tflite_model = converter.convert()
 # Save the model
 with open('NELOW_AI_model/NELOW_GL_TFLite_model_test_V3.tflite', 'wb') as f:
     f.write(tflite_model)
+
+
+
+
+
+

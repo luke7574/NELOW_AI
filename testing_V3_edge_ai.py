@@ -14,23 +14,17 @@ from keras import backend as K
 
 from scipy.fftpack import fft
 
-AI_model_training = 'NELOW_AI_model/NELOW_GL_model_test_V3.h5'
-AI_model_testing = 'NELOW_AI_model/NELOW_GL_TFLite_model_test_V3.tflite'
+AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V3.h5'
+AI_model_testing_edge = 'NELOW_AI_model/NELOW_GL_TFLite_model_test_V3.tflite'
 
-WAV_files_path_training = 'Training/WAV_files/'
-Numpy_files_path_training = 'Training/Numpy_files/'
-
-WAV_files_path_testing = 'Testing_곡성/WAV_files/'
-Numpy_files_path_testing = 'Testing_곡성/Numpy_files/'
-CSV_files_path_testing = 'Testing_곡성/CSV_files/'
-
-training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
-model_training = 0
-train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/Testing/plot_history/NELOW_test_V3.png'   #학습 그래프 경로/파일명 설정
+WAV_files_path_testing = 'NELOW_V3/Testing_곡성/WAV_files/'
+Numpy_files_path_testing = 'NELOW_V3/Testing_곡성/Numpy_files/'
+CSV_files_path_testing = 'NELOW_V3/Testing_곡성/CSV_files/'
 
 testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
-model_testing = 1
 
+model_testing = 1
+model_testing_edge = 1
 
 # Define recall metric
 def recall_m(y_true, y_pred):
@@ -184,48 +178,6 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
 
     return npy_table, label, filename
 
-# 학습 과정 그래프 출력
-def plot_history(history):
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-
-    # Accuracy 그래프
-    axes[0, 0].plot(history.history['accuracy'], label='Train Accuracy')
-    axes[0, 0].plot(history.history['val_accuracy'], label='Validation Accuracy')
-    axes[0, 0].set_title('Model Accuracy')
-    axes[0, 0].set_xlabel('Epochs')
-    axes[0, 0].set_ylabel('Accuracy')
-    axes[0, 0].legend()
-
-    # Loss 그래프
-    axes[0, 1].plot(history.history['loss'], label='Train Loss')
-    axes[0, 1].plot(history.history['val_loss'], label='Validation Loss')
-    axes[0, 1].set_title('Model Loss')
-    axes[0, 1].set_xlabel('Epochs')
-    axes[0, 1].set_ylabel('Loss')
-    axes[0, 1].legend()
-
-    # Precision 그래프
-    axes[1, 0].plot(history.history['precision_m'], label='Train Precision')
-    axes[1, 0].plot(history.history['val_precision_m'], label='Validation Precision')
-    axes[1, 0].set_title('Model Precision')
-    axes[1, 0].set_xlabel('Epochs')
-    axes[1, 0].set_ylabel('Precision')
-    axes[1, 0].legend()
-
-    # Recall & F1-score 그래프
-    axes[1, 1].plot(history.history['recall_m'], label='Train Recall')
-    axes[1, 1].plot(history.history['val_recall_m'], label='Validation Recall')
-    axes[1, 1].plot(history.history['f1_m'], label='Train F1-score')
-    axes[1, 1].plot(history.history['val_f1_m'], label='Validation F1-score')
-    axes[1, 1].set_title('Recall & F1-score')
-    axes[1, 1].set_xlabel('Epochs')
-    axes[1, 1].set_ylabel('Score')
-    axes[1, 1].legend()
-
-    plt.tight_layout()
-    plt.savefig(train_plot, dpi=300)
-    plt.show()
-
 # TFLite 추론 함수
 def predict_with_tflite(interpreter, input_data):
     input_details = interpreter.get_input_details()
@@ -238,122 +190,161 @@ def predict_with_tflite(interpreter, input_data):
 
 # Prepare data if sound_preprocessing flag is true
 # 음성파일(wav) numpy배열로 변환하여 저장
-if training_sound_preprocessing:
-    save_npy(WAV_files_path_training, Numpy_files_path_training)
 if testing_sound_preprocessing:
     save_npy(WAV_files_path_testing, Numpy_files_path_testing)
 
 
-# Train model if model_training flag is true
-if model_training:
-    model = tf.keras.models.Sequential()
-
-    # Convolutional neural network architecture
-    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(20, 13, 1), padding='same'))
-    model.add(LeakyReLU(alpha=0.1)) # 활성함수 relu 변형함수로 음의 입력에 대해서도 작은 기울기를 제공
-    model.add(MaxPooling2D((2, 2), padding='same'))
-    model.add(Conv2D(64, (3, 3), activation='linear', padding='same'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-    model.add(Conv2D(128, (3, 3), activation='linear', padding='same'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-    model.add(Flatten())
-    model.add(Dense(128, activation='linear'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(3, activation='softmax'))
-    model.compile(loss=keras.losses.categorical_crossentropy, optimizer='adam', metrics=['accuracy',f1_m,precision_m, recall_m])
-
-    q,w,e=load_npy(Numpy_files_path_training)
-    # model.fit(q,w,epochs=100,batch_size=200)
-    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.2, shuffle=True)
-    model.save(AI_model_training)
-    # 그래프 출력
-    plot_history(history)
-
 from sklearn.metrics import accuracy_score
 # Evaluate the model if model_testing flag is true
+
 if model_testing:
+    AI_model = load_model(AI_model_testing, compile=False)
+    npy_table, label, ee = load_npy(Numpy_files_path_testing)
+    # Getting predictions
+    AI_model_predictions = AI_model.predict(npy_table)
+    label_max = np.array(np.argmax(label, axis=1))
+    # print(label_max)
+    AI_model_predictions_max = np.array(np.argmax(AI_model_predictions, axis=1))
+    accuracy = accuracy_score(label_max, AI_model_predictions_max)
+    print(f"Accuracy : {accuracy:.4f}")
+
+    # max_amplitudes, max_frequencies = [], []
+    # for i in os.listdir(WAV_files_path_testing):
+    #     wav_file = os.path.join(WAV_files_path_testing, i)
+    #     max_amplitude, max_frequency = get_NELOW_values(wav_file)
+    #     max_amplitudes.append(max_amplitude)
+    #     max_frequencies.append(max_frequency)
+    #
+    #
+    # # Reshaping filenames for concatenation and removing the last 4 characters
+    # filenames = ee.reshape(len(ee), 1)
+    # filenames = np.array([fname[0][:-4] for fname in filenames]).reshape(len(filenames), 1)
+    # max_amplitudes = np.array(max_amplitudes).reshape(len(max_amplitudes), 1)  # Reshape max_amplitudes
+    # max_frequencies = np.array(max_frequencies).reshape(len(max_frequencies), 1)  # Reshape max_frequencies
+    #
+    # label_max_reshaped = label_max.reshape(len(label_max), 1)
+    # AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
+    #
+    # # Creating column names for the DataFrame
+    # columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'AI_모델_V3']
+    # fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
+    # # Creating DataFrame
+    # final_df = pd.DataFrame(fin, columns=columns)
+    # # Ensuring 'Max_Amplitude' is treated as a numeric column
+    # final_df['소리_최대_진폭'] = pd.to_numeric(final_df['소리_최대_진폭'], errors='coerce')
+    # # Sorting DataFrame by 'Max_Amplitude' in descending order
+    # final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
+    # # Saving to CSV
+    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V3_hp.csv', index=False, encoding='utf-8-sig')
+
+    # # Concatenating filenames, real labels, old predictions, and new predictions
+    # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
+    # # Creating column names for the DataFrame
+    # columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'AI_모델_V5_L', 'AI_모델_V5_M', 'AI_모델_V5_N']
+    # # Creating DataFrame
+    # final_df_2 = pd.DataFrame(final_data, columns=columns_2)
+    # # Ensuring 'Max_Amplitude' is treated as a numeric column
+    # final_df_2['소리_최대_진폭'] = pd.to_numeric(final_df_2['소리_최대_진폭'], errors='coerce')
+    # # Sorting DataFrame by 'Max_Amplitude' in descending order
+    # final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
+    # # Saving to CSV
+    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_V5_곡성.csv', index=False, encoding='utf-8-sig')
+    #
+    # summary = {}
+    #
+    # # Calculate counts of each label
+    # counts = np.bincount(AI_model_predictions_max, minlength=3)
+    # summary[AI_model_testing] = {
+    #     "Leak": counts[0],
+    #     "Meter": counts[1],
+    #     "No leak": counts[2]
+    # }
+    #
+    # # Print the results
+    # for model, results in summary.items():
+    #     print(f"Results for AI_모델_곡성:")
+    #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
+    #
+    # # Create a DataFrame and write to CSV
+    # df_summary = pd.DataFrame.from_dict(summary, orient='index')
+    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_V5_곡성.csv', encoding='utf-8-sig')
+
+if model_testing_edge:
 
     # 1. TFLite 모델 로드
-    interpreter = tf.lite.Interpreter(model_path=AI_model_testing)
+    interpreter = tf.lite.Interpreter(model_path=AI_model_testing_edge)
     interpreter.allocate_tensors()
-
     # 2. 테스트 데이터 로드
     npy_table, label, ee = load_npy(Numpy_files_path_testing)
-
     AI_model_predictions = []
     for i in range(len(npy_table)):
         input_data = np.expand_dims(npy_table[i], axis=0)  # 배치 차원 추가
         output_data = predict_with_tflite(interpreter, input_data)
         AI_model_predictions.append(output_data[0])
-
     AI_model_predictions = np.array(AI_model_predictions)
-
     # 3. 예측 결과 정리
     label_max = np.array(np.argmax(label, axis=1))
     AI_model_predictions_max = np.argmax(AI_model_predictions, axis=1)
-
     accuracy = accuracy_score(label_max, AI_model_predictions_max)
     print(f"Accuracy : {accuracy:.4f}")
 
-    max_amplitudes, max_frequencies = [], []
-    for i in os.listdir(WAV_files_path_testing):
-        wav_file = os.path.join(WAV_files_path_testing, i)
-        max_amplitude, max_frequency = get_NELOW_values(wav_file)
-        max_amplitudes.append(max_amplitude)
-        max_frequencies.append(max_frequency)
+    # max_amplitudes, max_frequencies = [], []
+    # for i in os.listdir(WAV_files_path_testing):
+    #     wav_file = os.path.join(WAV_files_path_testing, i)
+    #     max_amplitude, max_frequency = get_NELOW_values(wav_file)
+    #     max_amplitudes.append(max_amplitude)
+    #     max_frequencies.append(max_frequency)
+    #
+    # # Reshaping filenames for concatenation and removing the last 4 characters
+    # filenames = ee.reshape(len(ee), 1)
+    # filenames = np.array([fname[0][:-4] for fname in filenames]).reshape(len(filenames), 1)
+    # max_amplitudes = np.array(max_amplitudes).reshape(len(max_amplitudes), 1)  # Reshape max_amplitudes
+    # max_frequencies = np.array(max_frequencies).reshape(len(max_frequencies), 1)  # Reshape max_frequencies
+    #
+    # label_max_reshaped = label_max.reshape(len(label_max), 1)
+    # AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
+    #
+    # # Creating column names for the DataFrame
+    # columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'EdgeAI']
+    # fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
+    # # Creating DataFrame
+    # final_df = pd.DataFrame(fin, columns=columns)
+    # # Ensuring 'Max_Amplitude' is treated as a numeric column
+    # final_df['소리_최대_진폭'] = pd.to_numeric(final_df['소리_최대_진폭'], errors='coerce')
+    # # Sorting DataFrame by 'Max_Amplitude' in descending order
+    # final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
+    # # Saving to CSV
+    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_EdgeAI_test_곡성.csv', index=False, encoding='utf-8-sig')
+    #
+    # # Concatenating filenames, real labels, old predictions, and new predictions
+    # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
+    # # Creating column names for the DataFrame
+    # columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'EdgeAI_L', 'EdgeAI_M', 'EdgeAI_N']
+    # # Creating DataFrame
+    # final_df_2 = pd.DataFrame(final_data, columns=columns_2)
+    # # Ensuring 'Max_Amplitude' is treated as a numeric column
+    # final_df_2['소리_최대_진폭'] = pd.to_numeric(final_df_2['소리_최대_진폭'], errors='coerce')
+    # # Sorting DataFrame by 'Max_Amplitude' in descending order
+    # final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
+    # # Saving to CSV
+    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_EdgeAI_test_곡성.csv', index=False, encoding='utf-8-sig')
+    #
+    # summary = {}
+    #
+    # # Calculate counts of each label
+    # counts = np.bincount(AI_model_predictions_max, minlength=3)
+    # summary[AI_model_testing] = {
+    #     "Leak": counts[0],
+    #     "Meter": counts[1],
+    #     "No leak": counts[2]
+    # }
+    #
+    # # Print the results
+    # for model, results in summary.items():
+    #     print(f"Results for AI_모델_EdgeAI:")
+    #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
+    #
+    # # Create a DataFrame and write to CSV
+    # df_summary = pd.DataFrame.from_dict(summary, orient='index')
+    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_EdgeAI_test_곡성.csv', encoding='utf-8-sig')
 
-
-    # Reshaping filenames for concatenation and removing the last 4 characters
-    filenames = ee.reshape(len(ee), 1)
-    filenames = np.array([fname[0][:-4] for fname in filenames]).reshape(len(filenames), 1)
-    max_amplitudes = np.array(max_amplitudes).reshape(len(max_amplitudes), 1)  # Reshape max_amplitudes
-    max_frequencies = np.array(max_frequencies).reshape(len(max_frequencies), 1)  # Reshape max_frequencies
-
-    label_max_reshaped = label_max.reshape(len(label_max), 1)
-    AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
-
-    # Creating column names for the DataFrame
-    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'EdgeAI']
-    fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
-    # Creating DataFrame
-    final_df = pd.DataFrame(fin, columns=columns)
-    # Ensuring 'Max_Amplitude' is treated as a numeric column
-    final_df['소리_최대_진폭'] = pd.to_numeric(final_df['소리_최대_진폭'], errors='coerce')
-    # Sorting DataFrame by 'Max_Amplitude' in descending order
-    final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
-    # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_EdgeAI_test_곡성.csv', index=False, encoding='utf-8-sig')
-
-    # Concatenating filenames, real labels, old predictions, and new predictions
-    final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
-    # Creating column names for the DataFrame
-    columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'EdgeAI_L', 'EdgeAI_M', 'EdgeAI_N']
-    # Creating DataFrame
-    final_df_2 = pd.DataFrame(final_data, columns=columns_2)
-    # Ensuring 'Max_Amplitude' is treated as a numeric column
-    final_df_2['소리_최대_진폭'] = pd.to_numeric(final_df_2['소리_최대_진폭'], errors='coerce')
-    # Sorting DataFrame by 'Max_Amplitude' in descending order
-    final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
-    # Saving to CSV
-    final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_EdgeAI_test_곡성.csv', index=False, encoding='utf-8-sig')
-
-    summary = {}
-
-    # Calculate counts of each label
-    counts = np.bincount(AI_model_predictions_max, minlength=3)
-    summary[AI_model_testing] = {
-        "Leak": counts[0],
-        "Meter": counts[1],
-        "No leak": counts[2]
-    }
-
-    # Print the results
-    for model, results in summary.items():
-        print(f"Results for AI_모델_EdgeAI:")
-        print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
-
-    # Create a DataFrame and write to CSV
-    df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_EdgeAI_test_곡성.csv', encoding='utf-8-sig')
