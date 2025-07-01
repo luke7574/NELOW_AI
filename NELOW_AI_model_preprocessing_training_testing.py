@@ -14,21 +14,21 @@ from keras import backend as K
 
 from scipy.fftpack import fft
 
-AI_model_training = 'NELOW_AI_model/NELOW_GL_model_V5.h5'
+AI_model_training = 'NELOW_AI_model/NELOW_GL_model_V3_test.h5'
 AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V3.h5'
 
-WAV_files_path_training = 'Training_2024_문욱_강도2/WAV_files/'
-Numpy_files_path_training = 'Training_2024_문욱_강도2/Numpy_files/'
+WAV_files_path_training = 'NELOW_V3/Training/WAV_files/'
+Numpy_files_path_training = 'NELOW_V3/Training/Numpy_files/'
 
-WAV_files_path_testing = 'NELOW_V5/Testing_HP/WAV_files/'
-Numpy_files_path_testing = 'NELOW_V5/Testing_HP/Numpy_files/'
-CSV_files_path_testing = 'NELOW_V5/Testing_HP/CSV_files/'
+WAV_files_path_testing = 'NELOW_testing/Testing_KEITI/WAV_files/'
+Numpy_files_path_testing = 'NELOW_testing/Testing_KEITI/Numpy_files_V3/'
+CSV_files_path_testing = 'NELOW_testing/Testing_KEITI/CSV_files/'
 
 training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
 model_training = 0
-train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/NELOW_V5/plot_history/NELOW_V5.png'   #학습 그래프 경로/파일명 설정
+train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/NELOW_V3/Testing/plot_history/NELOW_V3_test.png'   #학습 그래프 경로/파일명 설정
 
-testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
+testing_sound_preprocessing = 1    # 음성파일(wav) numpy배열로 변환하여 저장
 model_testing = 1
 
 
@@ -258,10 +258,14 @@ if model_training:
 
     q,w,e=load_npy(Numpy_files_path_training)
     # model.fit(q,w,epochs=100,batch_size=200)
-    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.2, shuffle=True)
+    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.3, shuffle=True)
     model.save(AI_model_training)
     # 그래프 출력
     plot_history(history)
+    # 최고 검증 정확도
+    best_val_acc = max(history.history['val_accuracy'])
+    best_epoch = np.argmax(history.history['val_accuracy']) + 1
+    print(f"Best Validation Accuracy: {best_val_acc:.4f} (Epoch {best_epoch})")
 
 from sklearn.metrics import accuracy_score
 # Evaluate the model if model_testing flag is true
@@ -307,7 +311,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V3_hp.csv', index=False, encoding='utf-8-sig')
+    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V3_KEITI.csv', index=False, encoding='utf-8-sig')
 
     # # Concatenating filenames, real labels, old predictions, and new predictions
     # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)

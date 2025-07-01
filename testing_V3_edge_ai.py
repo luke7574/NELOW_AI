@@ -15,11 +15,11 @@ from keras import backend as K
 from scipy.fftpack import fft
 
 AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V3.h5'
-AI_model_testing_edge = 'NELOW_AI_model/NELOW_GL_TFLite_model_test_V3.tflite'
+AI_model_testing_edge = 'NELOW_AI_model/NELOW_GL_TFLite_model_V3.tflite'
 
-WAV_files_path_testing = 'NELOW_V3/Testing_곡성/WAV_files/'
-Numpy_files_path_testing = 'NELOW_V3/Testing_곡성/Numpy_files/'
-CSV_files_path_testing = 'NELOW_V3/Testing_곡성/CSV_files/'
+WAV_files_path_testing = 'NELOW_V3/Testing_ALL/WAV_files/'
+Numpy_files_path_testing = 'NELOW_V3/Testing_ALL/Numpy_files/'
+CSV_files_path_testing = 'NELOW_V3/Testing_ALL/CSV_files/'
 
 testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
 
@@ -206,7 +206,7 @@ if model_testing:
     # print(label_max)
     AI_model_predictions_max = np.array(np.argmax(AI_model_predictions, axis=1))
     accuracy = accuracy_score(label_max, AI_model_predictions_max)
-    print(f"Accuracy : {accuracy:.4f}")
+    print(f"V3 MODEL Accuracy : {accuracy:.4f}")
 
     # max_amplitudes, max_frequencies = [], []
     # for i in os.listdir(WAV_files_path_testing):
@@ -235,12 +235,12 @@ if model_testing:
     # # Sorting DataFrame by 'Max_Amplitude' in descending order
     # final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # # Saving to CSV
-    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V3_hp.csv', index=False, encoding='utf-8-sig')
-
+    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V3_ALL.csv', index=False, encoding='utf-8-sig')
+    #
     # # Concatenating filenames, real labels, old predictions, and new predictions
     # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
     # # Creating column names for the DataFrame
-    # columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'AI_모델_V5_L', 'AI_모델_V5_M', 'AI_모델_V5_N']
+    # columns_2 = ['파일_이름',  '소리_최대_진폭', '소리_최대_주파수', 'Label_L', 'Label_M', 'Label_N', 'AI_모델_V3_L', 'AI_모델_V3_M', 'AI_모델_V3_N']
     # # Creating DataFrame
     # final_df_2 = pd.DataFrame(final_data, columns=columns_2)
     # # Ensuring 'Max_Amplitude' is treated as a numeric column
@@ -248,7 +248,7 @@ if model_testing:
     # # Sorting DataFrame by 'Max_Amplitude' in descending order
     # final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
     # # Saving to CSV
-    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_V5_곡성.csv', index=False, encoding='utf-8-sig')
+    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_V3_ALL.csv', index=False, encoding='utf-8-sig')
     #
     # summary = {}
     #
@@ -261,13 +261,13 @@ if model_testing:
     # }
     #
     # # Print the results
-    # for model, results in summary.items():
-    #     print(f"Results for AI_모델_곡성:")
-    #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
+    # # for model, results in summary.items():
+    # #     print(f"Results for AI_모델_ALL:")
+    # #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
     #
     # # Create a DataFrame and write to CSV
     # df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_V5_곡성.csv', encoding='utf-8-sig')
+    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_V3_ALL.csv', encoding='utf-8-sig')
 
 if model_testing_edge:
 
@@ -286,7 +286,7 @@ if model_testing_edge:
     label_max = np.array(np.argmax(label, axis=1))
     AI_model_predictions_max = np.argmax(AI_model_predictions, axis=1)
     accuracy = accuracy_score(label_max, AI_model_predictions_max)
-    print(f"Accuracy : {accuracy:.4f}")
+    print(f"Edge AI MODEL Accuracy : {accuracy:.4f}")
 
     # max_amplitudes, max_frequencies = [], []
     # for i in os.listdir(WAV_files_path_testing):
@@ -314,7 +314,7 @@ if model_testing_edge:
     # # Sorting DataFrame by 'Max_Amplitude' in descending order
     # final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # # Saving to CSV
-    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_EdgeAI_test_곡성.csv', index=False, encoding='utf-8-sig')
+    # final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_EdgeAI_test_ALL.csv', index=False, encoding='utf-8-sig')
     #
     # # Concatenating filenames, real labels, old predictions, and new predictions
     # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
@@ -327,7 +327,7 @@ if model_testing_edge:
     # # Sorting DataFrame by 'Max_Amplitude' in descending order
     # final_df_2 = final_df_2.sort_values(by='소리_최대_진폭', ascending=False)
     # # Saving to CSV
-    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_EdgeAI_test_곡성.csv', index=False, encoding='utf-8-sig')
+    # final_df_2.to_csv(CSV_files_path_testing + 'probability_predictions_comparison_EdgeAI_test_ALL.csv', index=False, encoding='utf-8-sig')
     #
     # summary = {}
     #
@@ -340,11 +340,11 @@ if model_testing_edge:
     # }
     #
     # # Print the results
-    # for model, results in summary.items():
-    #     print(f"Results for AI_모델_EdgeAI:")
-    #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
+    # # for model, results in summary.items():
+    # #     print(f"Results for AI_모델_EdgeAI:")
+    # #     print(f"Leak: {results['Leak']}, Meter: {results['Meter']}, No leak: {results['No leak']}")
     #
     # # Create a DataFrame and write to CSV
     # df_summary = pd.DataFrame.from_dict(summary, orient='index')
-    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_EdgeAI_test_곡성.csv', encoding='utf-8-sig')
+    # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_EdgeAI_test_ALL.csv', encoding='utf-8-sig')
 

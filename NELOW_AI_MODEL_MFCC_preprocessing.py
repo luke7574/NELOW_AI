@@ -14,23 +14,23 @@ from keras import backend as K
 
 from scipy.fftpack import fft
 
-AI_model_training = 'NELOW_AI_model/NELOW_GL_model_V8.h5'
-AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V8.h5'
+AI_model_training = 'NELOW_AI_model/NELOW_GL_model_V9_test.h5'
+AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V9.h5'
 
-WAV_files_path_training = 'Training_2024_문욱_강도2/WAV_files_3sec/'
-Numpy_files_path_training = 'Training_2024_문욱_강도2/Numpy_files_V8/'
+WAV_files_path_training = 'Training_2024_문욱_강도2/WAV_files_V9/'
+Numpy_files_path_training = 'Training_2024_문욱_강도2/Numpy_files_V9/'
 
-WAV_files_path_testing = 'NELOW_testing/Testing_aramoon/WAV_files/'
-Numpy_files_path_testing = 'NELOW_testing/Testing_aramoon/Numpy_files_V8/'
-CSV_files_path_testing = 'NELOW_testing/Testing_aramoon/CSV_files/'
+WAV_files_path_testing = 'NELOW_testing/Testing_KEITI/WAV_files/'
+Numpy_files_path_testing = 'NELOW_testing/Testing_KEITI/Numpy_files_V9/'
+CSV_files_path_testing = 'NELOW_testing/Testing_KEITI/CSV_files/'
 
 training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
-model_training = 0
+model_training = 1
 model_training_3sec = 0
-train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/NELOW_testing/plot_history/NELOW_V8.png'   #학습 그래프 경로/파일명 설정
+train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/NELOW_testing/plot_history/NELOW_V9.png'   #학습 그래프 경로/파일명 설정
 
-testing_sound_preprocessing = 1    # 음성파일(wav) numpy배열로 변환하여 저장
-model_testing = 1
+testing_sound_preprocessing = 0    # 음성파일(wav) numpy배열로 변환하여 저장
+model_testing = 0
 
 
 # Define recall metric
@@ -167,7 +167,7 @@ def get_spec(path):
     q, w = librosa.load(path=path, sr=None)
     q=librosa.resample(q,orig_sr=w,target_sr=8000) # 원본 샘플링 레이팅에서 8000Hz 샘플링 레이트로 변환
     w=8000
-    q, w = get_wav_clean3sec(q, w)
+    q, w = get_wav_clean1sec(q, w)
     q, w = get_wav_filtered_filt(q, w)
     map=librosa.feature.mfcc(y=q,sr=w,n_fft=2048, hop_length=512,n_mfcc = 20)
     # y=q : 오디오 신호를 입력받음 / sr=w : 샘플링 레이트 / n_fft: FFT (Fast Fourier Transform)길이 지정 => 2048개의 샘플을 사용
@@ -201,9 +201,9 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
     for i in lis:
         if '.npy' in i:
             a = np.load(npy_path + i)
-            print(i, a.shape[0] , a.shape[1])
+            # print(i, a.shape[0] , a.shape[1])
             # print("Shape of a array:", a.shape)
-            a = a.reshape(-1, 20, 44, 1)
+            a = a.reshape(-1, 20, 13, 1)
             npy_table.append(a)
             if i[-9] == 'L':
                 label.append(0)
@@ -218,7 +218,7 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
     label = np.array(label)         # output
     filename = np.array(filename)
 
-    npy_table = npy_table.reshape(-1, 20, 44, 1)
+    npy_table = npy_table.reshape(-1, 20, 13, 1)
     label = label.reshape(-1, 3)
     filename = filename.reshape(-1, 1)
 
@@ -323,7 +323,7 @@ if model_training:
     model = tf.keras.models.Sequential()
 
     # Convolutional neural network architecture
-    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(20, 44, 1), padding='same'))
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(20, 13, 1), padding='same'))
     model.add(LeakyReLU(alpha=0.1)) # 활성함수 relu 변형함수로 음의 입력에 대해서도 작은 기울기를 제공
     model.add(MaxPooling2D((2, 2), padding='same'))
     model.add(Conv2D(64, (3, 3), activation='linear', padding='same'))
@@ -340,10 +340,14 @@ if model_training:
 
     q,w,e=load_npy(Numpy_files_path_training)
     # model.fit(q,w,epochs=100,batch_size=200)
-    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.2, shuffle=True)
+    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.3, shuffle=True)
     model.save(AI_model_training)
     # 그래프 출력
     plot_history(history)
+    # 최고 검증 정확도
+    best_val_acc = max(history.history['val_accuracy'])
+    best_epoch = np.argmax(history.history['val_accuracy']) + 1
+    print(f"Best Validation Accuracy: {best_val_acc:.4f} (Epoch {best_epoch})")
 
 if model_training_3sec:
     model = tf.keras.models.Sequential()
@@ -405,7 +409,7 @@ if model_testing:
     AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
 
     # Creating column names for the DataFrame
-    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'AI_모델_V8']
+    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'AI_모델_V9']
     fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
     # Creating DataFrame
     final_df = pd.DataFrame(fin, columns=columns)
@@ -414,7 +418,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V8_아라문.csv', index=False, encoding='utf-8-sig')
+    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_V9_dog.csv', index=False, encoding='utf-8-sig')
 
     # # Concatenating filenames, real labels, old predictions, and new predictions
     # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)
@@ -447,3 +451,21 @@ if model_testing:
     # # Create a DataFrame and write to CSV
     # df_summary = pd.DataFrame.from_dict(summary, orient='index')
     # df_summary.to_csv(f'{CSV_files_path_testing}summary_predictions_comparison_V5_곡성.csv', encoding='utf-8-sig')
+
+lis = os.listdir(Numpy_files_path_training)
+print(len(lis))
+label = []
+
+for i in lis:
+    if i[-9] == 'L':
+        label.append(0)
+    elif i[-9] == 'M':
+        label.append(1)
+    else:
+        label.append(2)
+
+count_L = label.count(0)
+count_M = label.count(1)
+count_N = label.count(2)
+
+print(f"누수 : {count_L}, 미터 : {count_M}, 비누수 : {count_N}")

@@ -14,22 +14,22 @@ from keras import backend as K
 
 from scipy.fftpack import fft
 
-AI_model_training = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_V8.h5'
-AI_model_testing = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_V8.h5'
+AI_model_training = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_V6_test.h5'
+AI_model_testing = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_V9.h5'
 
 # 훈련 데이터셋
-WAV_files_path_training = 'MEL_Spectrogram/Training_2024_문욱_강도2/WAV_files_3sec/'
-Numpy_files_path_training = 'MEL_Spectrogram/Training_2024_문욱_강도2/Numpy_files_V8/'
+WAV_files_path_training = 'MEL_Spectrogram/Training_2024_문욱_강도2/WAV_files/'
+Numpy_files_path_training = 'MEL_Spectrogram/Training_2024_문욱_강도2/Numpy_files_V6/'
 
 # 테스트 데이터셋
-WAV_files_path_testing = 'MEL_Spectrogram/Testing_aramoon/WAV_files/'
-Numpy_files_path_testing = 'MEL_Spectrogram/Testing_aramoon/Numpy_files_V8/'
-CSV_files_path_testing = 'MEL_Spectrogram/Testing_aramoon/CSV_files/'
+WAV_files_path_testing = 'MEL_Spectrogram/Testing_KEITI/WAV_files/'
+Numpy_files_path_testing = 'MEL_Spectrogram/Testing_KEITI/Numpy_files_V9/'
+CSV_files_path_testing = 'MEL_Spectrogram/Testing_KEITI/CSV_files/'
 
 training_sound_preprocessing = 0   # 음성파일(wav) numpy배열로 변환하여 저장
 model_training = 0
 model_training_3sec = 0
-train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/MEL_Spectrogram/plot_history/NELOW_MEL_model_V8.png'   #학습 그래프 경로/파일명 설정
+train_plot = 'C:/Users/user/AI/NELOW/NELOW_AI/MEL_Spectrogram/plot_history/NELOW_MEL_model_V6.png'   #학습 그래프 경로/파일명 설정
 
 testing_sound_preprocessing = 1    # 음성파일(wav) numpy배열로 변환하여 저장
 model_testing = 1
@@ -162,7 +162,7 @@ def get_spec(path):
     data, sr = librosa.load(path=path, sr=None)
     data = librosa.resample(data,orig_sr=sr,target_sr=8000) # 원본 샘플링 레이팅에서 8000Hz 샘플링 레이트로 변환
     sr = 8000
-    data, sr = get_wav_clean3sec(data, sr)
+    data, sr = get_wav_clean1sec(data, sr)
     data, sr = get_wav_filtered_filt(data, sr)
 
     mel_spec = librosa.feature.melspectrogram(y=data, sr=sr, n_fft=2048, hop_length=512, n_mels=128)
@@ -193,9 +193,9 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
     for i in lis:
         if '.npy' in i:
             fft_data = np.load(npy_path + i)
-            print(i, fft_data.shape[0],fft_data.shape[1])
+            # print(i, fft_data.shape[0],fft_data.shape[1])
             # print("Shape of a array:", a.shape)
-            fft_data = fft_data.reshape(-1, 128, 47, 1) # 2D CNN 입력 형태로 변환
+            fft_data = fft_data.reshape(-1, 128, 16, 1) # 2D CNN 입력 형태로 변환
             npy_table.append(fft_data)
             if i[-9] == 'L':
                 label.append(0)
@@ -210,7 +210,7 @@ def load_npy(npy_path):  # npy_path == Testing/Numpy_files/
     label = np.array(label)         # output
     filename = np.array(filename)
 
-    npy_table = npy_table.reshape(-1, 128, 47, 1)
+    npy_table = npy_table.reshape(-1, 128, 16, 1)
     label = label.reshape(-1, 3)
     filename = filename.reshape(-1, 1)
 
@@ -313,7 +313,7 @@ if model_training:
     model = tf.keras.models.Sequential()
 
     # Convolutional neural network architecture
-    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(128, 47, 1), padding='same'))
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='linear', input_shape=(128, 16, 1), padding='same'))
     model.add(LeakyReLU(alpha=0.1))  # 활성함수 relu 변형함수로 음의 입력에 대해서도 작은 기울기를 제공
     model.add(MaxPooling2D((2, 2), padding='same'))
     model.add(Conv2D(64, (3, 3), activation='linear', padding='same'))
@@ -330,10 +330,14 @@ if model_training:
 
     q,w,e=load_npy(Numpy_files_path_training)
     # model.fit(q,w,epochs=100,batch_size=200)
-    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.2, shuffle=True)
+    history = model.fit(q, w, epochs=100, batch_size=200, validation_split=0.3, shuffle=True)
     model.save(AI_model_training)
     # 그래프 출력
     plot_history(history)
+    # 최고 검증 정확도
+    best_val_acc = max(history.history['val_accuracy'])
+    best_epoch = np.argmax(history.history['val_accuracy']) + 1
+    print(f"Best Validation Accuracy: {best_val_acc:.4f} (Epoch {best_epoch})")
 
 if model_training_3sec:
     model = tf.keras.models.Sequential()
@@ -395,7 +399,7 @@ if model_testing:
     AI_model_predictions_max_reshaped = AI_model_predictions_max.reshape(len(AI_model_predictions_max),1)
 
     # Creating column names for the DataFrame
-    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'MEL_V8']
+    columns = ['파일_이름', '소리_최대_진폭', '소리_최대_주파수', 'Label', 'MEL_V9']
     fin = np.concatenate((filenames, max_amplitudes, max_frequencies, label_max_reshaped, AI_model_predictions_max_reshaped), axis=1)
     # Creating DataFrame
     final_df = pd.DataFrame(fin, columns=columns)
@@ -404,7 +408,7 @@ if model_testing:
     # Sorting DataFrame by 'Max_Amplitude' in descending order
     final_df = final_df.sort_values(by='소리_최대_진폭', ascending=False)
     # Saving to CSV
-    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_MEL_V8_아라문.csv', index=False, encoding='utf-8-sig')
+    final_df.to_csv(CSV_files_path_testing + 'fixed_predictions_comparison_MEL_V9_KEITI.csv', index=False, encoding='utf-8-sig')
 
     # # Concatenating filenames, real labels, old predictions, and new predictions
     # final_data = np.concatenate((filenames, max_amplitudes, max_frequencies, label, AI_model_predictions), axis=1)

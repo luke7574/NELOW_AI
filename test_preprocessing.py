@@ -74,17 +74,15 @@ def get_spec(path):
 
 def save_npy(i_path,o_path):
     lis = os.listdir(i_path)
-
     for i in lis:
         if '.wav' in i:
             q=get_spec(i_path+i)
             q=q[:,:-3] # 마지막 3개의 열만 제거 (오디오 길이가 일정하지 않거나, 마지막 프레임이 불완전할 가능성이 높기 때문에 제거하는 것)
-
             np.save(o_path+i+'.npy',q)
     return
 
 
-path = 'C:/Users/user/AI/NELOW/NELOW_AI/NELOW_V3/Training/WAV_files/13906_20230919_12_09_54_112_L.wav'
+path = 'C:/Users/user/AI/NELOW/NELOW_AI/새로운 데이터셋/no_bandfilter/185349_20241031_13_58_42_126_L.wav'
 
 
 q, w = librosa.load(path=path, sr=None)
@@ -95,13 +93,15 @@ get__spec=map[:,:-3]
 npy_table = get__spec.reshape(-1, 20, 13, 1)
 npy_table_real = np.array(npy_table)
 
-# print(q)
-# print(w)
-# print(len(q))
+print(q)
+print(w)
+print(len(q))
+print(q.shape)
 # print('--------------------------------')
 # print(q_1)
 # print(w_1)
 # print(len(q_1))
+# print(q_1.shape)
 # print('------------------------------')
 # print(q_f)
 # print(len(q_f))
@@ -109,23 +109,26 @@ npy_table_real = np.array(npy_table)
 # print('MFCC')
 # print(map)
 # print(len(map))
+# print(map.shape)
 # print('-----------------------------------')
 # print('get_spec')
 # print(get__spec)
 # print(len(get__spec))
+# print(get__spec.shape)
 # print('-----------------------------------')
 # print('npy_table')
 # print(npy_table)
 # print(len(npy_table))
+# print(npy_table.shape)
 # print('-----------------------------------')
 # print('npy_table real')
 # print(npy_table_real)
 # print(len(npy_table_real))
-
+# print(npy_table_real.shape)
 
 
 AI_model_testing = 'NELOW_AI_model/NELOW_GL_model_V3.h5'
-AI_model_testing_edge = 'NELOW_AI_model/NELOW_GL_TFLite_model_test_V3.tflite'
+AI_model_testing_edge = 'NELOW_AI_model/NELOW_GL_TFLite_model_V3.tflite'
 
 AI_model = load_model(AI_model_testing, compile=False)
 
