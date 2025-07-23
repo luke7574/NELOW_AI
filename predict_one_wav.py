@@ -15,7 +15,7 @@ from keras import backend as K
 from scipy.fftpack import fft
 
 AI_model_testing = 'MEL_Spectrogram/AI_MODEL/NELOW_MEL_model_V6.h5'
-path = "C:/Users/user/중부발전/M2_Leak/0613_0619/FH102/3017_20250614_040000_undefined/3017_20250614_040000_undefined.wav"
+path = "C:/Users/user/중부발전/M2_Leak/0620_0703/V111/4663_20250622_030000/테스트/remove_elec/adjusted_output.wav"
 model_testing = 1
 
 def get_wav_clean1sec(signal,sr):
@@ -47,7 +47,7 @@ def get_spec(path):
     data, sr = librosa.load(path=path, sr=None)
     data = librosa.resample(data,orig_sr=sr,target_sr=8000) # 원본 샘플링 레이팅에서 8000Hz 샘플링 레이트로 변환
     sr = 8000
-    data, sr = get_wav_clean1sec(data, sr)
+    # data, sr = get_wav_clean1sec(data, sr)
     data, sr = get_wav_filtered_filt(data, sr)
 
     mel_spec = librosa.feature.melspectrogram(y=data, sr=sr, n_fft=2048, hop_length=512, n_mels=128)
